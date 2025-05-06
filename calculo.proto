@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+// Services
+service CalculoService {
+    rpc ListarBancada(Empty) returns (BancadaList) {};
+ 
+};
+
+// Messages
+message Empty {};
+
+message Calculo {
+    int32 id = 1;
+    string temperatura = 2;
+    string condutividade = 3;
+    string umidade = 4
+
+};
+
+message CalculoList {
+    repeated Task tasks = 1;
+};
+
+message CalculoRequest {
+    int32 id = 1;
+};

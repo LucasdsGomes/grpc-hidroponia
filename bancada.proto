@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+// Services
+service BancadaService {
+    rpc ListarBancada(Empty) returns (BancadaList) {};
+    rpc GerarBancada(Bancada) returns (Bancada){};
+ 
+};
+
+// Messages
+message Empty {};
+
+message Bancada {
+    int32 id = 1;
+    string temperatura = 2;
+    string condutividade = 3;
+    string umidade = 4
+
+};
+
+message BancadaList {
+    repeated Task tasks = 1;
+};
+
+message BancadaRequest {
+    int32 id = 1;
+};

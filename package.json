@@ -1,0 +1,20 @@
+{
+  "name": "novaaulapicolo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.13.3",
+    "@grpc/proto-loader": "^0.7.15",
+    "grpc-tools": "^1.13.0",
+    "protoc-gen-js": "^3.21.4-4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

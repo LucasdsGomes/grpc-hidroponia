@@ -3,8 +3,8 @@ syntax = "proto3";
 package bancada;
 
 service TaskService {
-  rpc ObterLeitura (Empty) returns (Leitura);
-  rpc CalcularEstatisticas (LeiturasRequest) returns (EstatisticasResponse);
+  rpc ObterLeitura(Empty) returns (Leitura);
+  rpc CalcularEstatisticas(LeituraLista) returns (Estatisticas);
 }
 
 message Empty {}
@@ -15,11 +15,32 @@ message Leitura {
   float condutividade = 3;
 }
 
-message LeiturasRequest {
-  repeated Leitura leituras = 1;
+message LeituraComBancada {
+  int32 bancada = 1;
+  float temperatura = 2;
+  float umidade = 3;
+  float condutividade = 4;
 }
 
-message EstatisticasResponse {
-  Leitura media = 1;
-  Leitura mediana = 2;
+message LeituraLista {
+  repeated LeituraComBancada leituras = 1;
+}
+
+message EstatisticaSimples {
+  int32 media = 1;
+  int32 mediana = 2;
+}
+
+message EstatisticaPorBancada {
+  int32 bancada = 1;
+  EstatisticaSimples temperatura = 2;
+  EstatisticaSimples umidade = 3;
+  EstatisticaSimples condutividade = 4;
+}
+
+message Estatisticas {
+  repeated EstatisticaPorBancada porBancada = 1;
+  EstatisticaSimples temperatura = 2;
+  EstatisticaSimples umidade = 3;
+  EstatisticaSimples condutividade = 4;
 }

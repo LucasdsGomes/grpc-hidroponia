@@ -46,7 +46,7 @@ async function obterLeiturasAtivas() {
 
   for (const porta of portas) {
     const estaAtiva = await verificarBancadaAtiva(porta);
-    
+
     if (estaAtiva) {
       const leitura = await obterLeitura(porta);
       if (leitura) {
@@ -68,34 +68,37 @@ async function enviarParaServidor(leituras: any[]) {
 
   return new Promise((resolve) => {
     cliente.CalcularEstatisticas({ leituras }, (err: any, resposta: any) => {
-      if (err) {
-        console.log('\nServidor de estatísticas indisponível necessita estar ativo para cálculos.');
+      if (err || !resposta) {
+        console.log('\nServidor de estatísticas indisponível.');
         resolve(null);
-      } else {
-        console.log('\n=== Estatísticas Calculadas ===');
-        if (resposta?.totais?.temperatura) {
-          console.log('Média de Temperatura:', resposta.totais.temperatura.media, '°C');
-          console.log('Mediana de Temperatura:', resposta.totais.temperatura.mediana, '°C');
-        }
-        console.log('============');
-        if (resposta?.totais?.umidade) {
-          console.log('Média de Umidade:', resposta.totais.umidade.media, '%');
-          console.log('Mediana de Umidade:', resposta.totais.umidade.mediana, '%');
-        }
-        console.log('============');
-        if (resposta?.totais?.condutividade) {
-          console.log('Média de Condutividade:', resposta.totais.condutividade.media, 'uS/cm');
-          console.log('Mediana de Condutividade:', resposta.totais.condutividade.mediana, 'uS/cm');
-        }
-        resolve(resposta);
+        return;
       }
+
+      console.log('\n=== Estatísticas Calculadas ===');
+      if (resposta.temperatura) {
+        console.log('Média de Temperatura:', Math.floor(resposta.temperatura.media), '°C');
+        console.log('Mediana de Temperatura:', resposta.temperatura.mediana, '°C');
+      }
+      console.log('============');
+      if (resposta.umidade) {
+        console.log('Média de Umidade:', Math.floor(resposta.umidade.media));
+        console.log('Mediana de Umidade:', Math.floor(resposta.umidade.mediana));
+      }
+      console.log('============');
+      if (resposta.condutividade) {
+        console.log('Média de Condutividade:', Math.floor(resposta.condutividade.media));
+        console.log('Mediana de Condutividade:', Math.floor(resposta.condutividade.mediana));
+      }
+
+      resolve(resposta);
     });
+
   });
 }
 
 (async () => {
   console.log('Verificando bancadas ativas...');
-  
+
   const leituras = await obterLeiturasAtivas();
 
   if (leituras.length === 0) {
@@ -106,11 +109,12 @@ async function enviarParaServidor(leituras: any[]) {
   // Mostra leituras individuais independentemente do servidor de cálculo
   console.log('\n=== Leituras das Bancadas ===');
   leituras.forEach((leitura) => {
-    console.log(`\nBancada ${leitura.bancada}:`);
-    console.log(`Temperatura: ${leitura.temperatura}°C`);
-    console.log(`Umidade: ${leitura.umidade}%`);
-    console.log(`Condutividade: ${leitura.condutividade}uS/cm`);
-  });
+  console.log(`\nBancada ${leitura.bancada}:`);
+  console.log(`Temperatura: ${Number(leitura.temperatura).toFixed(2)}°C`);
+  console.log(`Umidade: ${Number(leitura.umidade).toFixed(2)}`);
+  console.log(`Condutividade: ${Number(leitura.condutividade).toFixed(2)}`);
+});
+
 
   // Tenta enviar para o servidor de cálculo (se não estiver disponível, continua normalmente)
   await enviarParaServidor(leituras);

@@ -15,17 +15,17 @@ function calcularMedia(lista: number[]) {
 
 function calcularMediana(lista: number[]) {
   if (!lista || lista.length === 0) return 0;
-  
-  // Filtra valores inválidos (caso existam)
+
+
   const valoresValidos = lista.filter(valor => !isNaN(valor) && valor !== null && valor !== undefined);
-  
+
   if (valoresValidos.length === 0) return 0;
-  
+
   const ordenada = [...valoresValidos].sort((a, b) => a - b);
   const meio = Math.floor(ordenada.length / 2);
-  
-  return ordenada.length % 2 === 0 ? 
-    (ordenada[meio - 1] + ordenada[meio]) / 2 : 
+
+  return ordenada.length % 2 === 0 ?
+    (ordenada[meio - 1] + ordenada[meio]) / 2 :
     ordenada[meio];
 }
 
@@ -33,26 +33,24 @@ servidor.addService(TaskService.service, {
   CalcularEstatisticas: (call: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
     try {
       const leituras = call.request.leituras || [];
-      
+
       // 1. Estatísticas INDIVIDUAIS por bancada
       const porBancada = leituras.map((leitura: any) => ({
-        bancada: leitura.bancada || 'Desconhecida',
+        bancada: leitura.bancada,
         temperatura: {
-          valor: leitura.temperatura,
-          media: leitura.temperatura, // Média = próprio valor (única leitura)
-          mediana: leitura.temperatura
+          media: Math.floor(leitura.temperatura),
+          mediana: Math.floor(leitura.temperatura)
         },
         umidade: {
-          valor: leitura.umidade,
-          media: leitura.umidade,
-          mediana: leitura.umidade
+          media: Math.floor(leitura.umidade),
+          mediana: Math.floor(leitura.umidade)
         },
         condutividade: {
-          valor: leitura.condutividade,
-          media: leitura.condutividade,
-          mediana: leitura.condutividade
+          media: Math.floor(leitura.condutividade),
+          mediana: Math.floor(leitura.condutividade)
         }
       }));
+
 
       // 2. Estatísticas CONSOLIDADAS (todas bancadas combinadas)
       const extrairValores = (prop: string) => leituras
@@ -74,11 +72,13 @@ servidor.addService(TaskService.service, {
         }
       };
 
-      callback(null, { 
-        porBancada,          // Estatísticas individuais
-        totais: estatisticasTotais,  // Estatísticas consolidadas
-        bancadasProcessadas: leituras.length
+      callback(null, {
+        porBancada,
+        temperatura: estatisticasTotais.temperatura,
+        umidade: estatisticasTotais.umidade,
+        condutividade: estatisticasTotais.condutividade
       });
+
 
     } catch (error) {
       console.error('Erro:', error);

@@ -1,38 +1,22 @@
 syntax = "proto3";
 
+package calculo;
+
 service CalculoService {
-    rpc ListarBancada(Empty) returns (CalculoList);
-    rpc EnviaDados(DadosReunidos) returns (Resultado);
-};
-
-message Empty {}
-
-message Calculo {
-    int32 id = 1;
-    string temperatura = 2;
-    string condutividade = 3;
-    string umidade = 4;
-}
-
-message CalculoList {
-    repeated Calculo tasks = 1;
-}
-
-message CalculoRequest {
-    int32 id = 1;
+  rpc EnviaDados (DadosReunidos) returns (Resultado);
 }
 
 message DadosReunidos {
-    repeated Sensor dados = 1;
+  repeated Sensor dados = 1;
 }
 
 message Sensor {
-    float temperatura = 1;
-    float umidade = 2;
-    float condutividade = 3;
+  float temperatura = 1;
+  float umidade = 2;
+  float condutividade = 3;
 }
 
 message Resultado {
-    string medias = 1;
-    string medianas = 2;
+  string medias = 1;
+  string medianas = 2;
 }

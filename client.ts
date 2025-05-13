@@ -1,63 +1,117 @@
-import { credentials, loadPackageDefinition } from "@grpc/grpc-js";
-import { loadSync } from "@grpc/proto-loader";
+import * as grpc from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
 
-const array: any[] = [];
-const portas: number[] = [3000, 3001, 3002];
+const pacoteDefinicao = protoLoader.loadSync('./bancada.proto');
+const grpcObject = grpc.loadPackageDefinition(pacoteDefinicao) as any;
+const TaskService = grpcObject.bancada.TaskService;
 
-const bancada = loadSync("./bancada.proto", {
-  keepCase: true,
-  longs: String,
-  enums: String,
-  defaults: true,
-  oneofs: true,
-});
-const bancadaProto = loadPackageDefinition(bancada) as any;
+const portas = [3000, 3001, 3002];
 
-function solicitaDadosBancadas() {
-  let respostasRecebidas = 0;
-
-  portas.forEach((porta, index) => {
-    const client = new bancadaProto.bancada.TaskService(
-      `localhost:${porta}`,
-      credentials.createInsecure()
+async function verificarBancadaAtiva(porta: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const cliente = new TaskService(
+      `127.0.0.1:${porta}`,
+      grpc.credentials.createInsecure()
     );
 
-    client.GerarBancada({}, (err: Error | null, response: any) => {
+    const deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 1);
+
+    cliente.waitForReady(deadline, (err: any) => {
+      resolve(!err);
+    });
+  });
+}
+
+async function obterLeitura(porta: number) {
+  const cliente = new TaskService(
+    `127.0.0.1:${porta}`,
+    grpc.credentials.createInsecure()
+  );
+
+  return new Promise((resolve) => {
+    cliente.ObterLeitura({}, (err: any, resposta: any) => {
       if (err) {
-        console.error(`Erro ao solicitar dados da porta ${porta}:`, err.message);
-        return;
-      }
-
-      const dados = {
-        temperatura: response.temperatura,
-        umidade: response.umidade,
-        condutividade: response.condutividade
-      };
-
-      array.push(dados);
-      console.log(`Dados recebidos da bancada (porta ${porta}):\n- Temperatura: ${dados.temperatura}\n- Umidade: ${dados.umidade}\n- Condutividade: ${dados.condutividade}\n`);
-
-      respostasRecebidas++;
-      if (respostasRecebidas === portas.length) {
-        EnviarDadosParaServidor();
+        resolve(null);
+      } else {
+        console.log(`Leitura obtida da bancada ${porta}`);
+        resolve({ ...resposta, bancada: porta });
       }
     });
   });
 }
 
-function EnviarDadosParaServidor() {
-  const client = new bancadaProto.bancada.TaskService(
-    "localhost:3003",
-    credentials.createInsecure()
+async function obterLeiturasAtivas() {
+  const leituras: any[] = [];
+
+  for (const porta of portas) {
+    const estaAtiva = await verificarBancadaAtiva(porta);
+    
+    if (estaAtiva) {
+      const leitura = await obterLeitura(porta);
+      if (leitura) {
+        leituras.push(leitura);
+      }
+    } else {
+      console.log(`Bancada ${porta} está desativada - ignorando`);
+    }
+  }
+
+  return leituras;
+}
+
+async function enviarParaServidor(leituras: any[]) {
+  const cliente = new TaskService(
+    '127.0.0.1:4000',
+    grpc.credentials.createInsecure()
   );
 
-  client.EnviaDados({ dados: array }, (err: Error | null, response: any) => {
-    if (err) {
-      console.error("Erro ao enviar dados para o servidor central:", err.message);
-    } else {
-      console.log("Resposta do Servidor Central:", response.mensagem);
-    }
+  return new Promise((resolve) => {
+    cliente.CalcularEstatisticas({ leituras }, (err: any, resposta: any) => {
+      if (err) {
+        console.log('\nServidor de estatísticas indisponível necessita estar ativo para cálculos.');
+        resolve(null);
+      } else {
+        console.log('\n=== Estatísticas Calculadas ===');
+        if (resposta?.totais?.temperatura) {
+          console.log('Média de Temperatura:', resposta.totais.temperatura.media, '°C');
+          console.log('Mediana de Temperatura:', resposta.totais.temperatura.mediana, '°C');
+        }
+        console.log('============');
+        if (resposta?.totais?.umidade) {
+          console.log('Média de Umidade:', resposta.totais.umidade.media, '%');
+          console.log('Mediana de Umidade:', resposta.totais.umidade.mediana, '%');
+        }
+        console.log('============');
+        if (resposta?.totais?.condutividade) {
+          console.log('Média de Condutividade:', resposta.totais.condutividade.media, 'uS/cm');
+          console.log('Mediana de Condutividade:', resposta.totais.condutividade.mediana, 'uS/cm');
+        }
+        resolve(resposta);
+      }
+    });
   });
 }
 
-solicitaDadosBancadas();
+(async () => {
+  console.log('Verificando bancadas ativas...');
+  
+  const leituras = await obterLeiturasAtivas();
+
+  if (leituras.length === 0) {
+    console.log('Nenhuma bancada ativa encontrada.');
+    return;
+  }
+
+  // Mostra leituras individuais independentemente do servidor de cálculo
+  console.log('\n=== Leituras das Bancadas ===');
+  leituras.forEach((leitura) => {
+    console.log(`\nBancada ${leitura.bancada}:`);
+    console.log(`Temperatura: ${leitura.temperatura}°C`);
+    console.log(`Umidade: ${leitura.umidade}%`);
+    console.log(`Condutividade: ${leitura.condutividade}uS/cm`);
+  });
+
+  // Tenta enviar para o servidor de cálculo (se não estiver disponível, continua normalmente)
+  await enviarParaServidor(leituras);
+})();

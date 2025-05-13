@@ -3,38 +3,23 @@ syntax = "proto3";
 package bancada;
 
 service TaskService {
-  rpc InsertOne (Task) returns (Task);
-  rpc FindAll (Empty) returns (TaskList);
-  rpc FindOne (TaskRequest) returns (Task);
-  rpc GerarBancada (Empty) returns (TaskList);
-  rpc EnviaDados (DadosReunidos) returns (Resposta);
-}
-
-message Task {
-  int32 id = 1;
-  string title = 2;
-}
-
-message TaskRequest {
-  int32 id = 1;
-}
-
-message TaskList {
-  repeated Task tasks = 1;
+  rpc ObterLeitura (Empty) returns (Leitura);
+  rpc CalcularEstatisticas (LeiturasRequest) returns (EstatisticasResponse);
 }
 
 message Empty {}
 
-message Dados {
+message Leitura {
   float temperatura = 1;
   float umidade = 2;
   float condutividade = 3;
 }
 
-message DadosReunidos {
-  repeated Dados dados = 1;
+message LeiturasRequest {
+  repeated Leitura leituras = 1;
 }
 
-message Resposta {
-  string mensagem = 1;
+message EstatisticasResponse {
+  Leitura media = 1;
+  Leitura mediana = 2;
 }

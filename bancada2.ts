@@ -23,7 +23,7 @@ servidor.addService(TaskService.service, {
   }
 });
 
-servidor.bindAsync('0.0.0.0:3000', grpc.ServerCredentials.createInsecure(), () => {
-  console.log('Bancada 1 rodando na porta 3000');
+servidor.bindAsync('0.0.0.0:3001', grpc.ServerCredentials.createInsecure(), () => {
+  console.log('Bancada 2 rodando na porta 3001');
 
 });

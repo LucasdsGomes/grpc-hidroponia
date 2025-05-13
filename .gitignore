@@ -1,0 +1,5 @@
+# Ignorar dependências do Node.js
+node_modules/
+
+# Caso queira ignorar arquivos .txt (remova se quiser versioná-los)
+*.txt
